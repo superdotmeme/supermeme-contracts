@@ -29,6 +29,11 @@ contract DegenBondingCurveOneTest is Test {
     SuperMemeVesting public superMemeStaking;
     MockToken public mockToken;
 
+    uint256 public amount = 800000000;
+    address mock1 = address(0x123456);
+    address mock2 = address(0x123457);
+    address mock3 = address(0x123458);
+
     uint256 tokenCreationFee = 0.0003 ether;
 
 
@@ -41,38 +46,37 @@ contract DegenBondingCurveOneTest is Test {
 
         uniswapV2Router = IUniswapV2Router02(0x5633464856F58Dfa9a358AfAf49841FEE990e30b);
         uniswapFactory = IUniswapFactory(uniswapV2Router.factory());
-    
+        vm.startPrank(owner);
         mockToken = new MockToken();
         superMemeVesting = new SuperMemeVesting(address(mockToken));
         superMemeStaking = new SuperMemeVesting(address(mockToken));
         revenueCollector = new RevenueCollector(address(mockToken), address(superMemeVesting), address(fakeContract));
         superMemeFactory = new SuperMemeFactory(address(revenueCollector));
-        vm.startPrank(owner);
+        
         console.log("owner", owner);
         address newToken = (superMemeFactory.createToken{value: tokenCreationFee}(devLockedTest, amount));
         console.log("newToken", newToken);
         address payable newTokenPayable = payable(newToken);
         newTokenInstance = DegenBondingCurveOne(newTokenPayable);
 
-        
-        vm.stopPrank();
-    }
-
-    function testFinishBondingCurve() public {
-        address mock1 = address(0x123456);
-        address mock2 = address(0x123457);
-        address mock3 = address(0x123458);
 
         uint256 startBalance = 1000 ether;
-        vm.startPrank(mock1);
+        mockToken.transfer(address(superMemeVesting), 10000 ether);
+        vm.stopPrank();
 
-        uint256 amount = 800000000;
+        
 
         vm.deal(mock1, startBalance);
         vm.deal(mock2, startBalance);
         vm.deal(mock3, startBalance);
 
+
         
+  
+    }
+
+    function testFinishBondingCurve() public {
+        vm.startPrank(mock1);
         uint256 cost = newTokenInstance.calculateCost(amount);
         uint256 tax = (cost * 1000) / 100000;
 
@@ -83,5 +87,39 @@ contract DegenBondingCurveOneTest is Test {
         vm.stopPrank();
 
 
+
+
+    }
+
+
+    function testRevenueFlow() public {
+        address mock1 = address(0x123456);
+        address mock2 = address(0x123457);
+        address mock3 = address(0x123458);
+
+        uint256 startBalance = 1000 ether;
+
+                uint256 cost = newTokenInstance.calculateCost(amount);
+        uint256 tax = (cost * 1000) / 100000;
+
+        testFinishBondingCurve();
+        assertEq(newTokenInstance.bondingCurveCompleted(), true);
+        vm.startPrank(mock1);
+        assertEq((address(revenueCollector).balance), 0.0003 ether + tax);
+        newTokenInstance.sendToDex();
+
+
+
+        assertEq((address(revenueCollector).balance), 0.0003 ether + 0.15 ether + tax);
+        console.log("revenueCollector", address(revenueCollector).balance);
+        revenueCollector.distrubuteRevenue();
+        assertEq((address(revenueCollector).balance), 0);
+        assertGt((address(superMemeVesting).balance), 0);
+
+
+
+
+
+    
     }
 }

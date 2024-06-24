@@ -19,7 +19,7 @@ contract RevenueCollector {
 
     constructor(address _mockToken, address _superMemeVesting, address _superMemeStaking) {
         mockToken = MockToken(_mockToken);
-        superMemeVesting = SuperMemeVesting(_superMemeVesting);
+        superMemeVesting = SuperMemeVesting(payable(_superMemeVesting));
         superMemeStaking = _superMemeStaking;
 
     }

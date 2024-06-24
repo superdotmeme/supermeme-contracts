@@ -216,4 +216,6 @@ contract SuperMemeVesting {
         VestingSchedule storage schedule = vestingSchedules[scheduleIndex];
         return schedule.TGEUnlockPercentage;
     }
+
+    receive() external payable {}
 }

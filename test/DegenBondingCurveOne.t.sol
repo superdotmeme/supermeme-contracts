@@ -32,6 +32,7 @@ contract DegenBondingCurveOneTest is Test {
         if (devLockedTest) {
             degenBondingCurveOne = new DegenBondingCurveOne(devLockedTest, 100, owner, address(revenueCollector));
         } else {
+            
             degenBondingCurveOne = new DegenBondingCurveOne(devLockedTest, 0, owner, address(revenueCollector));
         }
         
