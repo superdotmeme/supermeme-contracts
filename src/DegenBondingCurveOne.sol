@@ -6,6 +6,13 @@ import "./Interfaces/IUniswapV2Router02.sol";
 import "./Interfaces/IUniswapV2Pair.sol";
 
 contract DegenBondingCurveOne is ERC20 {
+
+
+    event SentToDex(uint256 ethAmount, uint256 tokenAmount, uint256 timestamp);
+    event tokensBought(uint256 indexed amount, uint256 cost, address indexed _tokenAddress, address indexed _buyer);
+    event tokensRefunded(uint256 indexed amount, uint256 refund, address indexed _tokenAddress, address indexed _seller);
+
+
     uint256 public constant MAX_SALE_SUPPLY = 1e9; // 1 billion tokens
     uint256 public constant TOTAL_ETHER = 4 ether;
     uint256 public constant SCALE = 1e18; // Scaling factor
@@ -38,7 +45,7 @@ contract DegenBondingCurveOne is ERC20 {
     IUniswapV2Router02 public uniswapV2Router;
     IUniswapV2Pair public uniswapV2Pair;
 
-    constructor(bool _devLocked, uint256 _amount, address devAdress, address _revenueCollector) ERC20("BasicBondingCurve", "BBC") public payable {
+    constructor(string memory _name, string memory _symbol, bool _devLocked, uint256 _amount, address devAdress, address _revenueCollector) ERC20(_name, _symbol) public payable {
 
         revenueCollector = _revenueCollector;
         contractBornTime = block.timestamp;
@@ -105,6 +112,7 @@ contract DegenBondingCurveOne is ERC20 {
         if (scaledSupply >= MAX_SALE_SUPPLY) {
             bondingCurveCompleted = true;
         }
+        emit tokensBought(_amount, cost, address(this), msg.sender);
     }
 
     function sellTokens(uint256 _amount) external {
@@ -127,6 +135,8 @@ contract DegenBondingCurveOne is ERC20 {
         totalEtherCollected -= refund ;
         scaledSupply -= _amount;
         payable(msg.sender).transfer(refund - tax );
+        
+        emit tokensRefunded(_amount, refund, address(this), msg.sender);
 
     }
 
@@ -165,6 +175,8 @@ contract DegenBondingCurveOne is ERC20 {
             address(this),
             block.timestamp
         );
+
+        emit SentToDex(_ethAmount, _tokenAmount, block.timestamp);
     }
 
     function payTax(uint256 _tax) internal {

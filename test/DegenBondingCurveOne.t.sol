@@ -10,6 +10,9 @@ contract DegenBondingCurveOneTest is Test {
     DegenBondingCurveOne public degenBondingCurveOne;
     RevenueCollector public revenueCollector;
 
+    string public name = "DegenToken";
+    string public symbol = "DEGEN";
+
     address owner = address(0x123);
     address addr1 = address(0x456);
     address addr2 = address(0x789);
@@ -30,10 +33,10 @@ contract DegenBondingCurveOneTest is Test {
         revenueCollector = new RevenueCollector(address(mockToken), fakeContract, fakeContract);
         vm.startPrank(owner);
         if (devLockedTest) {
-            degenBondingCurveOne = new DegenBondingCurveOne(devLockedTest, 100, owner, address(revenueCollector));
+            degenBondingCurveOne = new DegenBondingCurveOne(name, symbol,devLockedTest, 100, owner, address(revenueCollector));
         } else {
             
-            degenBondingCurveOne = new DegenBondingCurveOne(devLockedTest, 0, owner, address(revenueCollector));
+            degenBondingCurveOne = new DegenBondingCurveOne(name,symbol,devLockedTest, 0, owner, address(revenueCollector));
         }
         
         

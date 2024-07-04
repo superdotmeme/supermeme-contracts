@@ -36,8 +36,11 @@ contract DegenBondingCurveOneTest is Test {
 
     uint256 tokenCreationFee = 0.0003 ether;
 
-
     function setUp() public {
+
+        string memory name = "TestToken";
+        string memory symbol = "TT";
+        
 
         bool devLockedTest = false;
         uint256 amount = 0;
@@ -54,7 +57,7 @@ contract DegenBondingCurveOneTest is Test {
         superMemeFactory = new SuperMemeFactory(address(revenueCollector));
         
         console.log("owner", owner);
-        address newToken = (superMemeFactory.createToken{value: tokenCreationFee}(devLockedTest, amount));
+        address newToken = (superMemeFactory.createToken{value: tokenCreationFee}(name,symbol,devLockedTest, amount));
         console.log("newToken", newToken);
         address payable newTokenPayable = payable(newToken);
         newTokenInstance = DegenBondingCurveOne(newTokenPayable);
@@ -64,14 +67,9 @@ contract DegenBondingCurveOneTest is Test {
         mockToken.transfer(address(superMemeVesting), 10000 ether);
         vm.stopPrank();
 
-        
-
         vm.deal(mock1, startBalance);
         vm.deal(mock2, startBalance);
         vm.deal(mock3, startBalance);
-
-
-        
   
     }
 
@@ -115,11 +113,6 @@ contract DegenBondingCurveOneTest is Test {
         revenueCollector.distrubuteRevenue();
         assertEq((address(revenueCollector).balance), 0);
         assertGt((address(superMemeVesting).balance), 0);
-
-
-
-
-
     
     }
 }

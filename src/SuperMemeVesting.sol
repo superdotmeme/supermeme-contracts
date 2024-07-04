@@ -75,7 +75,7 @@ contract SuperMemeVesting {
         if (balance > 0) {
             uint256 claimablePercentage = getClaimablePercentage(scheduleIndex);
             console.log("claimablePercentage: %d", claimablePercentage);
-            uint256 initialBalance = schedule.initialBalances[msg.sender];
+            initialBalance = schedule.initialBalances[msg.sender];
             uint256 claimedAmount = initialBalance - balance;
             console.log("claimedAmount: %d", claimedAmount);
             uint256 claimableAmount = (initialBalance * claimablePercentage) /
