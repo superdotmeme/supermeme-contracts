@@ -14,9 +14,12 @@ contract SuperMemeBondingCurveTest is Test {
 
     address fakeContract = address(0x12123123);
 
+    uint256 public dummyBuyAmount = 10000;
+
     SuperMemeBondingCurve public bondingCurve;
     RevenueCollector public revenueCollector;
     IUniswapFactory public uniswapFactory;
+    address[] users = new address[](1100);
 
     struct TestScenario {
         address user;
@@ -24,10 +27,7 @@ contract SuperMemeBondingCurveTest is Test {
         uint256 amount;
         uint256 iterations;
         uint256 iterations2;
-
     }
-
-    TestScenario[] testScenarios;
 
     function setUp() public {
         uniswapFactory = IUniswapFactory(address(0x1));
@@ -39,64 +39,87 @@ contract SuperMemeBondingCurveTest is Test {
             address(0x2)
         );
 
-        // Initialize test scenarios
-        testScenarios.push(TestScenario(addr1, addr2, 1_000_000, 5,7));
-        testScenarios.push(TestScenario(addr1, addr2, 1_000_000, 20,20));
-        testScenarios.push(TestScenario(addr1, addr2, 1_000_000, 30,30));
-        testScenarios.push(TestScenario(addr1, addr2, 1_000_000, 40,40));
-        testScenarios.push(TestScenario(addr1, addr2, 1_000_000, 10,50));
-        testScenarios.push(TestScenario(addr1, addr2, 1_000_000, 10,30));
+        for (uint256 i = 0; i < 1005; i++) {
+            address account1 = makeAddr(vm.toString(i));
+            users[i] = account1;
+            vm.deal(account1, 1000 ether);
+        }
 
-        vm.deal(addr1, 100 ether);
-        vm.deal(addr2, 1000 ether);
+        vm.deal(addr1, 1000 ether);
     }
-
-    function testScenariosFunc() public {
-        
-        for (uint256 i = 0; i < testScenarios.length; i++) {
-            TestScenario memory scenario = testScenarios[i];
-            uint256 totalEthPaidUser1;
-            uint256 totalTokensBoughtUser1;
-
-            uint256 totalEthPaidUser2;
-            uint256 totalTokensBoughtUser2;
-
-            for (uint256 j = 0; j < scenario.iterations; j++) {
-                vm.startPrank(scenario.user);
-                uint256 cost = bondingCurve.calculateCost(scenario.amount);
-                uint256 tax = (cost * 1000) / 100000;
-                bondingCurve.buyTokens{value: cost + tax}(scenario.amount);
-                totalEthPaidUser1 += cost + tax;
-                totalTokensBoughtUser1 += scenario.amount * 10 ** 18;
-                vm.stopPrank();
-            }
-
-            console.log(" %s bought %s tokens for %s eth", "user1", totalTokensBoughtUser1 / 10 ** 18, totalEthPaidUser1);
-
-            for (uint256 j = 0; j < scenario.iterations2; j++) {
-                vm.startPrank(scenario.user2);
-                uint256 cost = bondingCurve.calculateCost(scenario.amount);
-                uint256 tax = (cost * 1000) / 100000;
-                bondingCurve.buyTokens{value: cost + tax}(scenario.amount);
-                totalEthPaidUser2 += cost + tax;
-                totalTokensBoughtUser2 += scenario.amount * 10 ** 18;
-                vm.stopPrank();
-            }
-
-            console.log(" %s bought %s tokens for %s eth", "user2", totalTokensBoughtUser2 / 10 ** 18, totalEthPaidUser2);
-
-            vm.startPrank(scenario.user);
-            console.log(" %s decides to refund", "user1");
-            console.log("total tokens user1 has", bondingCurve.balanceOf(scenario.user) / 10 ** 18);
-            uint256 refundAmount = bondingCurve.calculateTokensRefund(totalEthPaidUser1);
-                        console.log("     ");
-            console.log("     ");
+    function testBuyTokens() public {
+        vm.startPrank(addr1);
+        uint256 cost = bondingCurve.calculateCost(dummyBuyAmount);
+        uint256 tax = (cost * 1000) / 100000;
+        bondingCurve.buyTokens{value: cost + tax}(dummyBuyAmount);
+        assertEq(bondingCurve.balanceOf(addr1), dummyBuyAmount * 10 ** 18);
+        vm.stopPrank();
+    }
+    function testBuyTokens1000user() public {
+        vm.startPrank(addr1);
+        for (uint256 i = 0; i < 2; i++) {
+            uint256 cost = bondingCurve.calculateCost(dummyBuyAmount);
+            uint256 tax = (cost * 1000) / 100000;
+            bondingCurve.buyTokens{value: cost + tax}(dummyBuyAmount);
+            //assertEq(bondingCurve.balanceOf(addr1), dummyBuyAmount * 10 ** 18);
+        }
+        vm.stopPrank();
+        for (uint256 i = 0; i < 800; i++) {
+            vm.startPrank(users[i]);
+            uint256 cost = bondingCurve.calculateCost(dummyBuyAmount);
+            uint256 tax = (cost * 1000) / 100000;
+            bondingCurve.buyTokens{value: cost + tax}(dummyBuyAmount);
+            assertEq(
+                bondingCurve.balanceOf(users[i]),
+                dummyBuyAmount * 10 ** 18
+            );
             vm.stopPrank();
         }
+        vm.startPrank(addr1);
+        for (uint256 i = 0; i < 1; i++) {
+            uint256 cost = bondingCurve.calculateCost(dummyBuyAmount);
+            uint256 tax = (cost * 1000) / 100000;
+            bondingCurve.buyTokens{value: cost + tax}(dummyBuyAmount);
+            //assertEq(bondingCurve.balanceOf(addr1), dummyBuyAmount * 10 ** 18);
+        }
+        vm.stopPrank();
+        for (uint256 i = 0; i < 200; i++) {
+            vm.startPrank(users[i]);
+            uint256 cost = bondingCurve.calculateCost(dummyBuyAmount);
+            uint256 tax = (cost * 1000) / 100000;
+            bondingCurve.buyTokens{value: cost + tax}(dummyBuyAmount);
+            vm.stopPrank();
+        }
+        vm.startPrank(addr1);
+        for (uint256 i = 0; i < 2; i++) {
+            uint256 cost = bondingCurve.calculateCost(dummyBuyAmount);
+            uint256 tax = (cost * 1000) / 100000;
+            bondingCurve.buyTokens{value: cost + tax}(dummyBuyAmount);
+            //assertEq(bondingCurve.balanceOf(addr1), dummyBuyAmount * 10 ** 18);
+        }
+        vm.stopPrank();
+
+        //user1 refunds
+        vm.startPrank(addr1);
+        bondingCurve.refund();
+        vm.stopPrank();
     }
 
-
-    function testUpdateBalance() public {
-        bondingCurve.updateBalance();
+    function testRefund() public {
+        vm.startPrank(addr1);
+        uint256 etherBalanceBefore = address(addr1).balance;
+        uint256 cost = bondingCurve.calculateCost(dummyBuyAmount);
+        uint256 tax = (cost * 1000) / 100000;
+        bondingCurve.buyTokens{value: cost + tax}(dummyBuyAmount);
+        assertEq(bondingCurve.balanceOf(addr1), dummyBuyAmount * 10 ** 18);
+        bondingCurve.refund();
+        uint256 etherBalanceAfter = address(addr1).balance;
+        assertEq(address(bondingCurve).balance, 0);
+        assertApproxEqAbs(
+            etherBalanceAfter,
+            etherBalanceBefore - tax - (tax * 9) / 10,
+            0.00001 ether
+        );
+        vm.stopPrank();
     }
 }

@@ -9,9 +9,8 @@ contract DegenBondingCurveOne is ERC20 {
 
 
     event SentToDex(uint256 ethAmount, uint256 tokenAmount, uint256 timestamp);
-    event tokensBought(uint256 indexed amount, uint256 cost, address indexed _tokenAddress, address indexed _buyer);
-    event tokensRefunded(uint256 indexed amount, uint256 refund, address indexed _tokenAddress, address indexed _seller);
-
+    event tokensBought(uint256 indexed amount, uint256 cost, address indexed _tokenAddress, address indexed _buyer, uint256 _marketCap);
+    event tokensRefunded(uint256 indexed amount, uint256 refund, address indexed _tokenAddress, address indexed _seller, uint256 _marketCap);
 
     uint256 public constant MAX_SALE_SUPPLY = 1e9; // 1 billion tokens
     uint256 public constant TOTAL_ETHER = 4 ether;
@@ -62,7 +61,6 @@ contract DegenBondingCurveOne is ERC20 {
         }
         devLocked = devLocked;
     }
-
     function calculateCost(uint256 amount) public view returns (uint256) {
         uint256 currentSupply = scaledSupply;
         uint256 newSupply = currentSupply + amount;
@@ -71,7 +69,6 @@ contract DegenBondingCurveOne is ERC20 {
         // console.log("Cost inside the contract: ", cost);
         return cost;
     }
-
     function calculateRefund(uint256 _amount) public view returns (uint256) {
         uint256 currentSupply = scaledSupply;
         uint256 newSupply = currentSupply - _amount;
@@ -79,8 +76,6 @@ contract DegenBondingCurveOne is ERC20 {
             10 ** 5) / (3 * SCALE)) * 40000) / 77500;
         return refund;
     }
-
-
     function devLock(uint256 _amount) internal  {
         require(_amount > 0, "Amount must be greater than 0");
         require(_amount <= 100000000, "Amount must be less than 100,000,000");
@@ -89,8 +84,6 @@ contract DegenBondingCurveOne is ERC20 {
         scaledSupply += _amount;
         _mint(devAddress, _amount * 10 ** 18);
     }
-
-
     function buyTokens(uint256 _amount) external payable {
         require(
             bondingCurveCompleted == false,
@@ -103,18 +96,16 @@ contract DegenBondingCurveOne is ERC20 {
             "Exceeds maximum supply"
         );
         require(msg.value >= cost + tax, "Insufficient Ether sent");
-        
         payTax(tax);
         totalEtherCollected += msg.value - tax;
         scaledSupply += _amount;
         _mint(msg.sender, _amount * 10 ** 18);
-
         if (scaledSupply >= MAX_SALE_SUPPLY) {
             bondingCurveCompleted = true;
         }
-        emit tokensBought(_amount, cost, address(this), msg.sender);
+        uint256 marketCap = totalSupply() * cost;
+        emit tokensBought(_amount, cost, address(this), msg.sender, marketCap);
     }
-
     function sellTokens(uint256 _amount) external {
         require(
             bondingCurveCompleted == false,
@@ -135,11 +126,9 @@ contract DegenBondingCurveOne is ERC20 {
         totalEtherCollected -= refund ;
         scaledSupply -= _amount;
         payable(msg.sender).transfer(refund - tax );
-        
-        emit tokensRefunded(_amount, refund, address(this), msg.sender);
-
+        uint256 marketCap = totalSupply() * refund;
+        emit tokensRefunded(_amount, refund, address(this), msg.sender, marketCap);
     }
-
     function _update(
         address from,
         address to,
@@ -159,7 +148,6 @@ contract DegenBondingCurveOne is ERC20 {
             }
         }
     }
-
     function sendToDex() public payable {
         require(bondingCurveCompleted, "Bonding curve not completed");
         payTax(sendDexRevenue);
@@ -175,18 +163,11 @@ contract DegenBondingCurveOne is ERC20 {
             address(this),
             block.timestamp
         );
-
         emit SentToDex(_ethAmount, _tokenAmount, block.timestamp);
     }
-
     function payTax(uint256 _tax) internal {
         payable(revenueCollector).transfer(_tax);
         totalRevenueCollected += _tax;
     }
-
-
-
-
-
     receive() external payable {}
 }

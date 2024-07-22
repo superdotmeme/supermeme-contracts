@@ -7,7 +7,7 @@ contract SuperMemeFactory {
     event TokenCreated(address indexed tokenAddress, address indexed devAddress, uint256 amount, bool devLocked);
 
 
-    uint256 public createTokenRevenue = 0.0003 ether;
+    uint256 public createTokenRevenue = 0.00001 ether;
     address public revenueCollector;
     address[] public tokenAddresses;
 
